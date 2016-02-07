@@ -14,7 +14,7 @@ var pageModifier = function(selText) {
 	div.setAttribute("align", "right");
 	div.style.position="fixed";
 	div.style.display="table-row";
-	div.style.height="700px";
+	//div.style.height="700px";
 	//div.style.overflowY="scroll";
 	div.style.overflowX="hidden";
 	div.style.zIndex="+1000000";
@@ -24,16 +24,19 @@ var pageModifier = function(selText) {
 	div.style.width="200px";
 	div.style.border="2px solid #6E6E6E";
 	//table.style.textAlign="center";
-	//div.style.backgroundColor="#FFFFCC";
+	//div.style.backgroundColor="#D8D8D8";
+	div.style.backgroundColor="#F3F7EB";
 	div.style.color="#000000";
 	div.style.borderCollapse="collapse";
 	div.style.borderSpacing="5px";
-
+	div.style.borderTopLeftRadius="15px";
+	div.style.borderBottomLeftRadius="15px";
 
 
 	var rowDiv = document.createElement("div");
 	rowDiv.style.display="table-row";
 	rowDiv.style.float="left";
+	rowDiv.style.backgroundColor='#808080';
 	//rowDiv.style.lineHeight="1";
 	rowDiv.style.paddingTop="0px";
 	rowDiv.style.width = "100%";
@@ -56,13 +59,15 @@ var pageModifier = function(selText) {
 	textDiv.style.verticalAlign="middle";
 	textDiv.style.display="table-cell";
 	textDiv.style.textAlign="left";
-	textDiv.innerHTML='<font face="Lucida Calligraphy" size="4x" color="#5C005C"><strong>'+"Related News"+'</strong></font>';
+	textDiv.innerHTML='<font face="Calibri" size="4x" color="white"><strong>'+"Related News"+'</strong></font>';
 	rowDiv.appendChild(textDiv);
 
 
 	var closeImage = chrome.extension.getURL("close.jpg");
-	var but = document.createElement("img");
-	but.src = closeImage;
+	//var but = document.createElement("img");
+	//but.src = closeImage;
+	var but = document.createElement("div");
+	but.innerHTML='<a href="#" size="10x"><font color="white">&#x274C;</font></a>';
 	buttonDiv.appendChild(but);
 
 	rowDiv.appendChild(buttonDiv);
@@ -77,22 +82,60 @@ var pageModifier = function(selText) {
 	rowDiv.innerHTML='<hr>';
 	div.appendChild(rowDiv);
 	
-	var URL = "http://192.168.1.11:8983/solr/TheHindu/select?q="+selText+"&fl=article_title%2C+article_url&wt=json&indent=true";
+	var encoded = "";
+	var j = 0;
+	console.log(selText);
+	for (var i = 0; i < selText.length; i++) {
+		var x = selText.charAt(i);
+		if (x == ':') {
+			
+			encoded+='\\';
+			encoded+=x;
+			
+			console.log("Bingo");
+		}
+		else {
+			
+			encoded+=x;
+		}
+	}
+	console.log(encoded);
+	//var URL = "http://192.168.1.11:8983/solr/collection1/select?q="+encoded+"&fl=article_title%2C+article_url&wt=json&indent=true";
+	var URL = "http://192.168.1.207:8000/?text=\""+encoded+"\"&loc_id=10&api_key=key1";
+	console.log(URL);
 	var resp = null;
 	//resp = httpGet(URL);
 	var resp;
 	var xhr = new XMLHttpRequest();
+	/*
 	xhr.open( "GET", URL, false );
 	xhr.onreadystatechange = function() {
 		//console.log(xhr.readyState);
 		if (xhr.readyState == 4) {
 			resp = eval ("("+xhr.responseText+")");
+			//console.log(typeof resp);
+			//console.log(resp);
 			//alert(resp);
 			//console.log("resp= "+resp);
 			}
 		}
+	*/
+	
+	xhr.onreadystatechange = function() {
+		//console.log(xhr.readyState);
+		if (xhr.readyState == 4 && xhr.status == 200) {
+			resp = eval ("("+xhr.responseText+")");
+			//alert(resp);
+			//console.log("resp= "+resp);
+			}
+		}
+	xhr.open( "GET", URL, false );
+	
 	xhr.send();
+	
+	console.log(typeof resp);
 	console.log("response = "+JSON.stringify(resp));
+	//resp = JSON.parse(resp);
 	//alert("response = "+JSON.stringify(resp));
 	
 	var lnk = new Array();
@@ -104,15 +147,19 @@ var pageModifier = function(selText) {
 	*/
 	var j = 0, k = 0;
 	for (var i = 0; i < resp.response.docs.length; i++){	
-		lnk[j++] = resp.response.docs[i].article_url[0];
-		title[k++] = resp.response.docs[i].article_title[0];
+		if (i != 0 && title[k-1] != resp.response.docs[i].article_title) {
+		lnk[j++] = resp.response.docs[i].article_url;
+		title[k++] = resp.response.docs[i].article_title;
+		}
 	}
+	
 	/*
 	for (var i=0; i<lnk.length; i++) {
 		console.log(lnk[i]);
 		console.log(title[i]);
 	}
 	*/
+	
 	
 	for (var i = 0; i < k; i++){	
 		var rowDiv = document.createElement("div");
